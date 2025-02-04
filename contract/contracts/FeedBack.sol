@@ -1,19 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
-
-interface IMarket {
-    function getProduct(
-        uint index
-    )
-        external
-        view
-        returns (
-            uint price,
-            string memory name,
-            string memory description,
-            address ownerProduct
-        );
-}
+import "./Market.sol";
 
 contract FeedBack {
     struct Review {
@@ -24,17 +11,23 @@ contract FeedBack {
         address reviewer;
     }
 
-    IMarket marketContract;
+    // Reference to the Market contract
+    Market public marketContract;
 
+    // Mapping to store reviews
+    mapping(uint => Review) public reviews;
     uint public reviewCount;
 
+    event FeedBackAdded(uint productId_, uint8 rating_, string comment_);
+
+    // The constructor now receives the market contract address along with an initial review
     constructor(
         address marketAddress,
         uint productId_,
         uint8 rating_,
         string memory comment_
     ) {
-        marketContract = IMarket(marketAddress);
+        marketContract = Market(marketAddress);
         reviews[reviewCount] = Review({
             productId: productId_,
             rating: rating_,
@@ -45,27 +38,29 @@ contract FeedBack {
         reviewCount++;
     }
 
-    mapping(uint => Review) public reviews;
-
-    event FeedBackAdded(uint productId_, uint8 rating_, string comment_);
-
     function addFeedback(
         uint productId_,
         uint8 rating_,
         string memory comment_
     ) external {
         require(rating_ >= 1 && rating_ <= 5, "Rating must be between 1 and 5");
-        (, , string memory test, address ownerProduct) = marketContract
-            .getProduct(productId_);
+
+        // Retrieve product details from the Market contract as a struct
+        Market.Product memory prod = marketContract.getProduct(productId_);
+
+        // Check that the product exists (for example, the product's name is not empty)
         require(
-            keccak256(bytes(test)) != keccak256(bytes("")),
+            keccak256(bytes(prod.name)) != keccak256(bytes("")),
             "Invalid product"
         );
+
+        // Ensure the reviewer is not the product owner
         require(
-            ownerProduct != msg.sender,
+            prod.ownerProduct != msg.sender,
             "FeedBack sender address must be different from Product Owner address"
         );
 
+        // Add the feedback
         reviews[reviewCount] = Review({
             productId: productId_,
             rating: rating_,
@@ -81,22 +76,30 @@ contract FeedBack {
     function getAllFeedbacks(
         uint productId_
     ) public view returns (Review[] memory) {
-        (, , string memory test, ) = marketContract.getProduct(productId_);
+        // Retrieve product details to validate product existence
+        Market.Product memory prod = marketContract.getProduct(productId_);
         require(
-            keccak256(bytes(test)) != keccak256(bytes("")),
+            keccak256(bytes(prod.name)) != keccak256(bytes("")),
             "Invalid product"
         );
 
-        Review[] memory allFeedbacks = new Review[](reviewCount);
-        uint index = 0;
+        // Count reviews for this product
+        uint count = 0;
+        for (uint i = 0; i < reviewCount; i++) {
+            if (reviews[i].productId == productId_) {
+                count++;
+            }
+        }
 
+        // Allocate an array of the correct size and populate it
+        Review[] memory allFeedbacks = new Review[](count);
+        uint index = 0;
         for (uint i = 0; i < reviewCount; i++) {
             if (reviews[i].productId == productId_) {
                 allFeedbacks[index] = reviews[i];
                 index++;
             }
         }
-
         return allFeedbacks;
     }
 }
