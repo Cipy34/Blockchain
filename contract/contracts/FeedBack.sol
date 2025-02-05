@@ -102,4 +102,23 @@ contract FeedBack {
         }
         return allFeedbacks;
     }
+
+    function calculateTotalPoints(
+        Review[] memory reviewsArray,
+        uint productId
+    ) public pure returns (uint totalPoints) {
+        for (uint i = 0; i < reviewsArray.length; i++) {
+            // Only include ratings for the specified productId
+            if (reviewsArray[i].productId == productId) {
+                totalPoints += reviewsArray[i].rating;
+            }
+        }
+    }
+
+    function getTotalPointsForProduct(
+        uint productId
+    ) external view returns (uint) {
+        Review[] memory productReviews = getAllFeedbacks(productId);
+        return calculateTotalPoints(productReviews, productId);
+    }
 }
