@@ -45,22 +45,17 @@ contract FeedBack {
     ) external {
         require(rating_ >= 1 && rating_ <= 5, "Rating must be between 1 and 5");
 
-        // Retrieve product details from the Market contract as a struct
         Market.Product memory prod = marketContract.getProduct(productId_);
-
-        // Check that the product exists (for example, the product's name is not empty)
         require(
             keccak256(bytes(prod.name)) != keccak256(bytes("")),
             "Invalid product"
         );
 
-        // Ensure the reviewer is not the product owner
         require(
             prod.ownerProduct != msg.sender,
             "FeedBack sender address must be different from Product Owner address"
         );
 
-        // Add the feedback
         reviews[reviewCount] = Review({
             productId: productId_,
             rating: rating_,
@@ -76,14 +71,12 @@ contract FeedBack {
     function getAllFeedbacks(
         uint productId_
     ) public view returns (Review[] memory) {
-        // Retrieve product details to validate product existence
         Market.Product memory prod = marketContract.getProduct(productId_);
         require(
             keccak256(bytes(prod.name)) != keccak256(bytes("")),
             "Invalid product"
         );
 
-        // Count reviews for this product
         uint count = 0;
         for (uint i = 0; i < reviewCount; i++) {
             if (reviews[i].productId == productId_) {
@@ -91,7 +84,6 @@ contract FeedBack {
             }
         }
 
-        // Allocate an array of the correct size and populate it
         Review[] memory allFeedbacks = new Review[](count);
         uint index = 0;
         for (uint i = 0; i < reviewCount; i++) {
@@ -108,7 +100,6 @@ contract FeedBack {
         uint productId
     ) public pure returns (uint totalPoints) {
         for (uint i = 0; i < reviewsArray.length; i++) {
-            // Only include ratings for the specified productId
             if (reviewsArray[i].productId == productId) {
                 totalPoints += reviewsArray[i].rating;
             }

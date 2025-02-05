@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
+import "./Withdrawable.sol";
 
-contract Market {
+contract Market is Withdrawable {
     struct Product {
         uint price;
         string name;
@@ -45,26 +46,32 @@ contract Market {
     }
 
     function buyProduct(uint index) external payable {
-        require(index >= 0 && index < productCount, "Invalid index");
+        require(index < productCount, "Invalid index");
         require(msg.value >= products[index].price, "Insufficient funds");
 
+        //Actualizat cu withdrawal, se actualizeaza soldul seller-ului pentru retragere ulterioara
         address seller = products[index].ownerProduct;
+        _addPendingWithdrawal(seller, products[index].price);
 
-        payable(seller).transfer(products[index].price);
+        //Daca s a trimis o suma mai mare, se da refund sender ului
+        if (msg.value > products[index].price) {
+            uint refund = msg.value - products[index].price;
+            payable(msg.sender).transfer(refund);
+        }
 
         emit ProductBought(index, msg.sender);
     }
 
-    modifier onliOwner(uint index) {
+    modifier onlyOwner(uint index) {
         require(
             msg.sender == products[index].ownerProduct,
-            "Only the owner can acces this"
+            "Only the owner can access this"
         );
         _;
     }
 
-    function deleteProduct(uint index) external onliOwner(index) {
-        require(index >= 0 && index < productCount, "Invalid index");
+    function deleteProduct(uint index) external onlyOwner(index) {
+        require(index < productCount, "Invalid index");
 
         products[index] = Product({
             price: 0,
@@ -78,17 +85,14 @@ contract Market {
 
     function getAllProducts() public view returns (Product[] memory) {
         Product[] memory allProducts = new Product[](productCount);
-
         for (uint i = 0; i < productCount; i++) {
             allProducts[i] = products[i];
         }
-
         return allProducts;
     }
 
     function getProduct(uint index) external view returns (Product memory) {
-        require(index >= 0 && index < productCount, "Invalid index");
-
+        require(index < productCount, "Invalid index");
         return products[index];
     }
 }

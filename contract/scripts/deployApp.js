@@ -3,7 +3,6 @@
 const { ethers } = require("hardhat");
 
 async function main() {
-  // Get signers (owner, account1, account2)
   const [owner, account1, account2] = await ethers.getSigners();
 
   // -------------------------------------------------
@@ -18,7 +17,7 @@ async function main() {
   // Get the Market contract factory and deploy it
   const Market = await ethers.getContractFactory("Market");
   const marketContract = await Market.deploy(price, name, description);
-  await marketContract.waitForDeployment(); // For Hardhat Ethers v6
+  await marketContract.waitForDeployment();
   console.log("Market deployed at:", marketContract.target);
 
   // -------------------------------------------------
