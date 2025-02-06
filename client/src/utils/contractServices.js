@@ -1,53 +1,83 @@
-import Lock_ABI from "./Lock_ABI.json";
-import { BrowserProvider, Contract, parseEther, formatEther } from "ethers";
-import { CONTRACT_ADDRESS } from "./constants";
+import { BrowserProvider, Contract } from "ethers";
+import { MARKET_ADDRESS, FEEDBACK_ADDRESS } from "../utils/constants";
+import MARKET_ABI from "../utils/Market_ABI.json";
+import FEEDBACK_ABI from "../utils/Feedback_ABI.json";
 
-// Module-level variables to store provider, signer, and contract
-let provider;
-let signer;
-let contract;
-
-// Function to initialize the provider, signer, and contract
-const initialize = async () => {
-  if (typeof window.ethereum !== "undefined") {
-    provider = new BrowserProvider(window.ethereum);
-    signer = await provider.getSigner();
-    contract = new Contract(CONTRACT_ADDRESS, Lock_ABI, signer);
-  } else {
-    console.error("Please install MetaMask!");
+const getProvider = async () => {
+  if (!window.ethereum) {
+    throw new Error("MetaMask is not installed!");
   }
+  return new BrowserProvider(window.ethereum);
 };
 
-// Initialize once when the module is loaded
-initialize();
-
-// Function to request single account
-export const requestAccount = async () => {
-  try {
-    const accounts = await provider.send("eth_requestAccounts", []);
-    return accounts[0]; // Return the first account
-  } catch (error) {
-    console.error("Error requesting account:", error.message);
-    return null;
-  }
-};
-// Function to get contract balance in ETH
-export const getContractBalanceInETH = async () => {
-  const balanceWei = await provider.getBalance(CONTRACT_ADDRESS);
-  const balanceEth = formatEther(balanceWei); // Convert Wei to ETH string
-  return balanceEth; // Convert ETH string to number
+const getMarketContract = async () => {
+  const provider = await getProvider();
+  const signer = await provider.getSigner();
+  return new Contract(MARKET_ADDRESS, MARKET_ABI, signer);
 };
 
-// Function to deposit funds to the contract
-export const depositFund = async (depositValue) => {
-  const ethValue = parseEther(depositValue);
-  const deposit = await contract.deposit({ value: ethValue });
-  await deposit.wait();
+const getFeedbackContract = async () => {
+  const provider = await getProvider();
+  const signer = await provider.getSigner();
+  return new Contract(FEEDBACK_ADDRESS, FEEDBACK_ABI, signer);
 };
 
-// Function to withdraw funds from the contract
-export const withdrawFund = async () => {
-  const withdrawTx = await contract.withdraw();
-  await withdrawTx.wait();
-  console.log("Withdrawal successful!");
+export const createProduct = async (price, name, description) => {
+  const contract = await getMarketContract();
+  await contract.createProduct(price, name, description);
+};
+
+export const buyProduct = async (index) => {
+  const contract = await getMarketContract();
+  const product = await contract.getProduct(index);
+  await contract.buyProduct(index, { value: product.price });
+};
+
+export const deleteProduct = async (index) => {
+  const contract = await getMarketContract();
+  await contract.deleteProduct(index);
+};
+
+export const getAllProducts = async () => {
+  const contract = await getMarketContract();
+  return await contract.getAllProducts();
+};
+
+export const withdraw = async () => {
+  const contract = await getMarketContract();
+  await contract.withdraw();
+};
+
+export const addFeedback = async (productId, rating, comment) => {
+  const contract = await getFeedbackContract();
+  await contract.addFeedback(productId, rating, comment);
+};
+
+export const getAllFeedbacks = async (productId) => {
+  const contract = await getFeedbackContract();
+  const feedbacks = await contract.getAllFeedbacks(productId);
+  return feedbacks.map((feedback) => ({
+    productId: feedback.productId.toString(),
+    rating: feedback.rating,
+    comment: feedback.comment,
+    timestamp: new Date(Number(feedback.timestamp) * 1000).toLocaleString(),
+    reviewer: feedback.reviewer,
+  }));
+};
+
+export const getTotalPointsForProduct = async (productId) => {
+  const contract = await getFeedbackContract();
+  const totalPoints = await contract.getTotalPointsForProduct(productId);
+  return totalPoints.toString();
+};
+
+export default {
+  createProduct,
+  buyProduct,
+  deleteProduct,
+  getAllProducts,
+  withdraw,
+  addFeedback,
+  getAllFeedbacks,
+  getTotalPointsForProduct,
 };

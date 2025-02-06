@@ -86,6 +86,9 @@ contract Market is Withdrawable {
     function getAllProducts() public view returns (Product[] memory) {
         Product[] memory allProducts = new Product[](productCount);
         for (uint i = 0; i < productCount; i++) {
+            if(
+            keccak256(bytes(products[i].name)) != keccak256(bytes("")))
+            
             allProducts[i] = products[i];
         }
         return allProducts;
@@ -93,6 +96,10 @@ contract Market is Withdrawable {
 
     function getProduct(uint index) external view returns (Product memory) {
         require(index < productCount, "Invalid index");
+        require(
+            keccak256(bytes(products[index].name)) != keccak256(bytes("")),
+            "Invalid product"
+        );
         return products[index];
     }
 }
