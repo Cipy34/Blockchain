@@ -10,7 +10,7 @@ async function main() {
   // -------------------------------------------------
   // Define constructor parameters for Market:
   // Price must be greater than 0, and we supply a product name and description.
-  const price = ethers.parseEther("0.01");
+  const price = ethers.parseEther("1");
   const name = "Initial Product";
   const description = "Initial Description";
 
@@ -53,9 +53,9 @@ async function main() {
 
   const FeedBack = await ethers.getContractFactory("FeedBack");
   const feedbackContract = await FeedBack.deploy(
-    marketContract.target, 
-    initialProductId, 
-    initialRating, 
+    marketContract.target,
+    initialProductId,
+    initialRating,
     initialComment
   );
   await feedbackContract.waitForDeployment();
@@ -67,11 +67,9 @@ async function main() {
   // Use a different account (account1) to add feedback so that it isn’t the product owner.
   const additionalRating = 4;
   const additionalComment = "Additional Feedback from account1";
-  const tx = await feedbackContract.connect(account1).addFeedback(
-    initialProductId, 
-    additionalRating, 
-    additionalComment
-  );
+  const tx = await feedbackContract
+    .connect(account1)
+    .addFeedback(initialProductId, additionalRating, additionalComment);
   await tx.wait();
   console.log("Additional feedback added by account1.");
 

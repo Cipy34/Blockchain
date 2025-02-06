@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { BrowserProvider } from "ethers";
 import { ethers } from "ethers";
+import "./styles.css";
 
 import ProductList from "./components/ProductList";
 import CreateProduct from "./components/CreateProduct";
