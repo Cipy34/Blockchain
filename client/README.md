@@ -2,9 +2,10 @@
 
 ## Features
 
-- Deposit fund
-- Withdraw fund
-- Display contract info
+- Create product
+- Buy Product
+- Delete product
+- Add review
 
 ```
 //Copy ./artifacts/contracts/Lock.sol/Lock.json abi list to client/src/utils/Lock_ABI.json
